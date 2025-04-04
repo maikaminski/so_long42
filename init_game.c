@@ -21,7 +21,7 @@ t_game	*init_game(void)
 	game->mlx = mlx_init(MAX_WIDTH * TILE_SIZE, MAX_HEIGTH * TILE_SIZE, "so_long", true);
 	if (!game->mlx)
 	{
-		FUNCAODEFREE(game);
+		free_matrix(game);
 		return (NULL);
 	}
 	game->window = NULL;
