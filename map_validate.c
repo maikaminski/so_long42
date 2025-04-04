@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   map_validate.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: makamins <makamins@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/04 14:11:14 by makamins          #+#    #+#             */
+/*   Updated: 2025/04/04 14:24:32 by makamins         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
 static int	is_valid_char(char c)
@@ -5,39 +17,29 @@ static int	is_valid_char(char c)
 	return (c == '0' || c == '1' || c == 'P' || c == 'E' || c == 'C');
 }
 
-static void	validate_map(t_game *game)
+static void validate_map(t_game *game)
 {
-	int	y;
-	int	x;
-	int	p_count;
-	int	e_count;
-	int	c_count;
+    int y = -1;
+    int x;
+    int p_count = 0;
 
-	y = -1;
-	p_count = 0;
-	e_count = 0;
-	c_count = 0;
-	while (++y < game->map_height)
-	{
-		x = -1;
-		while (++x < game->map_width)
-		{
-			if (!is_valid_char(game->map[y][x]))
-				exit_error("Invalid character in map", game);
-			if (game->map[y][x] == 'P')
-			{
-				game->player.x = x;
-				game->player.y = y;
-				p_count++;
-			}
-			else if (game->map[y][x] == 'E')
-				e_count++;
-			else if (game->map[y][x] == 'C')
-				c_count++;
-		}
-	}
-	if (p_count != 1 || e_count != 1 || c_count < 1)
-		exit_error("Map must have 1 Player, 1 Exit, and at least 1 Collectible", game);
+    game->exit_count = 0;
+    game->collectibles = 0;
+    while (++y < game->map_height && (x = -1))
+        while (++x < game->map_width)
+        {
+            if (!is_valid_char(game->map[y][x]))
+                exit_error("Invalid char", game);
+            if (game->map[y][x] == 'P' && ++p_count)
+            {
+                game->player.x = x;
+                game->player.y = y;
+            }
+            game->exit_count += (game->map[y][x] == 'E');
+            game->collectibles += (game->map[y][x] == 'C');
+        }
+    if (p_count != 1 || game->exit_count != 1 || game->collectibles < 1)
+        exit_error("Map needs 1P, 1E, 1C+", game);
 }
 
 static void	check_walls(t_game *game)
