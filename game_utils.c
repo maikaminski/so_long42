@@ -12,4 +12,11 @@
 
 #include "so_long.h"
 
-
+void	render_all(t_game *game)
+{
+	render_all_floors(game);
+	render_all_walls(game);
+	render_all_collectibles(game);
+	render_exit(game);
+	render_player(game);
+}
