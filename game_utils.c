@@ -12,6 +12,8 @@
 
 #include "so_long.h"
 
+load_textures();
+
 void	render_all(t_game *game)
 {
 	render_all_floors(game);
