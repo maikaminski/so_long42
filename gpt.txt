@@ -1,0 +1,483 @@
+errors.c
+#include "so_long.h"
+
+void	free_matrix(char **matrix)
+{
+	int	i;
+
+	i = 0;
+	while (matrix[i])
+	{
+		free(matrix[i]);
+		i++;
+	}
+	free(matrix);
+}
+void	free_textures(t_game *game)
+{
+	if (game->tex->wall_tex)
+		mlx_delete_texture(game->tex->wall_tex);
+	if (game->tex->player_tex)
+		mlx_delete_texture(game->tex->player_tex);
+	if (game->tex->exit_tex)
+		mlx_delete_texture(game->tex->exit_tex);
+	if (game->tex->coll_tex)
+		mlx_delete_texture(game->tex->coll_tex);
+	if (game->tex->floor_tex)
+		mlx_delete_texture(game->tex->floor_tex);
+	free(game->tex);
+}
+
+void	free_game(t_game *game)
+{
+	if (game->mlx)
+		mlx_terminate(game->mlx);
+	if (game->map)
+		free_matrix(game->map);
+	if (game->tex)
+		free_textures(game);
+	free(game);
+}
+
+void	exit_error(char *message, t_game *game)
+{
+	ft_printf("Error\n%s\n", message);
+	free_game(game);
+	exit(EXIT_FAILURE);
+}
+
+init_game.c
+#include "so_long.h"
+
+t_game	*init_game(void)
+{
+	t_game	*game;
+	game = (t_game *)malloc(sizeof(t_game));
+	if (!game)
+		return (NULL);
+	game->tex = (t_images *)malloc(sizeof(t_images));
+	if (!game->tex)
+	{
+		free(game);
+		return (NULL);
+	}
+	game->mlx = mlx_init(MAX_WIDTH * TILE_SIZE, MAX_HEIGHT * TILE_SIZE, "so_long", true);
+	if (!game->mlx)
+	{
+		free(game->tex);
+		free(game);
+		return (NULL);
+	}
+	game->window = NULL;
+	game->map = NULL;
+	game->player.x = 0;
+	game->player.y = 0;
+	game->player.moves = 0;
+	game->collectibles = 0;
+	game->collected = 0;
+	return (game);
+}
+
+load_images.char
+#include "so_long.h"
+
+void	load_textures(t_game *game)
+{
+	game->tex->floor_tex = mlx_load_png("./images/grass.png");
+	game->tex->exit_tex = mlx_load_png("./images/castle.png");
+	game->tex->coll_tex = mlx_load_png("./images/star.png");
+	game->tex->player_tex = mlx_load_png("./images/player.png");
+	game->tex->wall_tex = mlx_load_png("./images/brick.png");
+	if (!game->tex->floor_tex || !game->tex->exit_tex
+		|| !game->tex->coll_tex || !game->tex->player_tex || !game->tex->wall_tex)
+		exit_error("Failed to load textures", game);
+	
+}
+
+void	load_images(t_game *game)
+{
+	game->tex->floor = mlx_texture_to_image(game->mlx, game->tex->floor_tex);
+	game->tex->exit = mlx_texture_to_image(game->mlx, game->tex->exit_tex);
+	game->tex->coll = mlx_texture_to_image(game->mlx, game->tex->coll_tex);
+	game->tex->player_img = mlx_texture_to_image(game->mlx, game->tex->player_tex);
+	game->tex->wall = mlx_texture_to_image(game->mlx, game->tex->wall_tex);
+	if (!game->tex->floor || !game->tex->exit
+		|| !game->tex->coll || !game->tex->player_img || !game->tex->wall)
+		exit_error("Failed to load images", game);
+}
+
+map_validate.c
+#include "so_long.h"
+
+static int	is_valid_char(char c)
+{
+	return (c == '0' || c == '1' || c == 'P' || c == 'E' || c == 'C');
+}
+
+static void validate_map(t_game *game)
+{
+    int y = -1;
+    int x;
+    int p_count = 0;
+
+    game->exit_count = 0;
+    game->collectibles = 0;
+    while (++y < game->map_height && (x = -1))
+        while (++x < game->map_width)
+        {
+            if (!is_valid_char(game->map[y][x]))
+                exit_error("Invalid char", game);
+            if (game->map[y][x] == 'P' && ++p_count)
+            {
+                game->player.x = x;
+                game->player.y = y;
+            }
+            game->exit_count += (game->map[y][x] == 'E');
+            game->collectibles += (game->map[y][x] == 'C');
+        }
+    if (p_count != 1 || game->exit_count != 1 || game->collectibles < 1)
+        exit_error("Map needs 1P, 1E, 1C+", game);
+}
+
+static void	check_walls(t_game *game)
+{
+	int	x;
+	int	y;
+
+	y = 0;
+	while (y < game->map_height)
+	{
+		if (y == 0 || y == game->map_height - 1)
+		{
+			x = 0;
+			while (x < game->map_width)
+			{
+				if (game->map[y][x] != '1')
+					exit_error("Map must be surrounded by walls", game);
+				x++;
+			}
+		}
+		else if (game->map[y][0] != '1' || game->map[y][game->map_width - 1] != '1')
+			exit_error("Map must be surrounded by walls", game);
+		y++;
+	}
+}
+
+int	parse_map(char *map_file, t_game *game)
+{
+	int		fd;
+	char	*line;
+	int		i;
+
+	fd = open(map_file, O_RDONLY);
+	if (fd < 0)
+		exit_error("Failed to open map file", game);
+	game->map = (char **)ft_calloc(MAX_HEIGHT + 1, sizeof(char *));
+	if (!game->map)
+		exit_error("Memory allocation failed", game);
+	i = 0;
+	while ((line = get_next_line(fd)) != NULL)
+	{
+		if (i >= MAX_HEIGHT)
+			exit_error("Map is too tall", game);
+		game->map[i++] = ft_strtrim(line, "\n");
+		free(line);
+	}
+	close(fd);
+	game->map[i] = NULL;
+	game->map_height = i;
+	game->map_width = ft_strlen(game->map[0]);
+	validate_map(game);
+	check_walls(game);
+	return (1);
+}
+
+player_moves.c
+#include "so_long.h"
+
+static int	is_valid_move(t_game *game, int x, int y)
+{
+	if (x < 0 || y < 0 || x >= game->map_width || y >= game->map_height)
+		return (0);
+	if (game->map[y][x] == '1')
+		return (0);
+	return (1);
+}
+
+static void	update_player_position(t_game *game, int new_x, int new_y)
+{
+	if (game->map[new_y][new_x] == 'C')
+		game->collected++;
+	else if (game->map[new_y][new_x] == 'E' && game->collected == game->collectibles)
+	{
+		ft_printf("You win! Moves: %d\n", game->player.moves);
+		free_game(game);
+		exit(EXIT_SUCCESS);
+	}
+	game->map[game->player.y][game->player.x] = '0';
+	game->map[new_y][new_x] = 'P';
+	game->player.x = new_x;
+	game->player.y = new_y;
+	game->player.moves++;
+	ft_printf("Moves: %d\n", game->player.moves);
+}
+
+void	move_player(t_game *game, int dx, int dy)
+{
+	int	new_x;
+	int	new_y;
+
+	new_x = game->player.x + dx;
+	new_y = game->player.y + dy;
+	if (is_valid_move(game, new_x, new_y))
+		update_player_position(game, new_x, new_y);
+}
+
+void	handle_keypress(mlx_key_data_t keydata, void *param)
+{
+	t_game	*game;
+
+	game = (t_game *)param;
+	if (keydata.key == MLX_KEY_W && keydata.action == MLX_PRESS)
+		move_player(game, 0, -1);
+	else if (keydata.key == MLX_KEY_S && keydata.action == MLX_PRESS)
+		move_player(game, 0, 1);
+	else if (keydata.key == MLX_KEY_A && keydata.action == MLX_PRESS)
+		move_player(game, -1, 0);
+	else if (keydata.key == MLX_KEY_D && keydata.action == MLX_PRESS)
+		move_player(game, 1, 0);
+	else if (keydata.key == MLX_KEY_ESCAPE && keydata.action == MLX_PRESS)
+	{
+		free_game(game);
+		exit(EXIT_SUCCESS);
+	}
+}
+
+render_utils.c
+#include "so_long.h"
+
+void	render(t_game *game, int i, int j, mlx_image_t *img)
+{
+	int	x;
+	int	y;
+	
+	if (!game->mlx || !img)
+	{
+		ft_printf("Image not found\n");
+		return ;
+	}
+	x = j * TILE_SIZE;
+	y = i * TILE_SIZE;
+	mlx_image_to_window(game->mlx, img, x, y);
+}
+
+void	render_floor(t_game *game)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	while (i < game->map_height)
+	{
+		j = 0;
+		while (j < game->map_width)
+		{
+			render(game, i, j, game->tex->floor);
+			j++;
+		}
+		i++;
+	}
+}
+
+void	render_w_e_c(t_game *game)
+{
+	int i;
+	int j;
+
+	i = 0;
+	while (game->map[i])
+	{
+		j = 0;
+		while (game->map[i][j])
+		{
+			if (game->map[i][j] == '1')
+				render(game, i, j, game->tex->wall);
+			else if (game->map[i][j] == 'E')
+				render(game, i, j, game->tex->exit);
+			else if (game->map[i][j] == 'C')
+				render(game, i, j, game->tex->coll);
+			j++;
+		}
+		i++;
+	}
+}
+
+void	render_player(t_game *game)
+{
+	mlx_t	*mlx;
+	int		x;
+	int		y;
+	
+	mlx = game->mlx;
+	if (!mlx || !game->tex->player_img)
+	{
+		ft_printf("Image player not found\n");
+		return ;
+	}
+	x = game->player.x * TILE_SIZE;
+	y = game->player.y * TILE_SIZE;
+	mlx_image_to_window(mlx, game->tex->player_img, x, y);
+}
+
+void	render_all(t_game *game)
+{
+	render_floor(game);
+	render_w_e_c(game);
+	render_player(game);
+}
+
+so_long.c
+#include "so_long.h"
+
+
+int	main(int argc, char **argv)
+{
+	t_game	*game;
+
+	if (argc != 2)
+		exit_error("Usage: ./so_long <map_file.ber>", NULL);
+	game = init_game();
+	if (!parse_map(argv[1], game))
+		exit_error("Map parsing failed", game);
+	load_textures(game);
+	load_images(game);
+	render_all(game);
+	mlx_key_hook(game->mlx, &handle_keypress, game);
+	mlx_loop(game->mlx);
+	free_game(game);
+	return (0);
+}
+makefile
+NAME = so_long
+FLAGS = -Wall -Wextra -Werror -g
+SRC = so_long.c load_images.c errors.c init_game.c map_validate.c \
+		player_moves.c render_utils.c 
+CC = cc
+GNL = gnl/gnl.a
+LIBFT = libft/libft.a
+FT_PRINTF = ft_printf/ft_printf.a
+MLX_DIR = ./MLX42
+MLX_FLAGS = -I$(MLX_DIR)/include -L$(MLX_DIR)/build -lmlx42 -ldl -lglfw -pthread -lm
+
+OBJS = $(SRC:%.c=%.o)
+
+all: $(NAME)
+
+$(GNL):
+	@make -C gnl
+$(FT_PRINTF):
+	@make -C ft_printf
+$(LIBFT):
+	@make -C libft
+$(MLX_DIR)/build/libmlx42.a:
+	@mkdir -p $(MLX_DIR)/build
+	@cd $(MLX_DIR) && cmake -B build && cmake --build build -j4
+
+$(NAME): $(OBJS) $(GNL) $(LIBFT) $(FT_PRINTF) $(MLX_DIR)/build/libmlx42.a
+	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(MLX_FLAGS) $(GNL) $(LIBFT) $(FT_PRINTF)
+	chmod +x $(NAME)
+
+%.o: %.c
+	$(CC) $(FLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS)
+	@make clean -C gnl
+	@make clean -C libft
+	@make clean -C ft_printf
+
+
+fclean: clean
+	rm -f $(NAME)
+	@make fclean -C gnl
+	@make clean -C libft
+	@make clean -C ft_printf
+
+re: fclean all
+
+.PHONY: all clean fclean re 
+so_long.h
+#ifndef SO_LONG_H
+# define SO_LONG_H
+
+# include <unistd.h>
+# include <stdlib.h>
+# include <fcntl.h>
+
+# include "./libft/libft.h"
+# include "./ft_printf/ft_printf.h"
+# include "./gnl/get_next_line.h"
+# include "MLX42/include/MLX42/MLX42.h"
+
+# define TILE_SIZE 64
+# define MAX_WIDTH 25
+# define MAX_HEIGHT 10
+
+typedef struct s_player
+{
+	int		x;
+	int		y;
+	int		moves;
+}	t_player;
+
+typedef struct s_images
+{
+    mlx_image_t     *player_img;
+    mlx_image_t     *coll;
+    mlx_image_t     *floor;
+    mlx_image_t     *wall;
+    mlx_image_t     *exit;
+    mlx_texture_t   *wall_tex;
+    mlx_texture_t   *player_tex;
+    mlx_texture_t   *exit_tex;
+    mlx_texture_t   *coll_tex;
+	mlx_texture_t	*floor_tex;
+} t_images;
+
+typedef struct s_game
+{
+	void		*mlx;
+	void		*window;
+	char		**map;
+	int			map_height;
+	int			map_width;
+	int			collectibles;
+	int			collected;
+	int			exit_count;
+	t_images	*tex;
+	t_player	player;
+	t_images	images;
+	int			is_mlx_init;
+}	t_game;
+
+void	free_matrix(char **matrix);
+void	free_textures(t_game *game);
+void	free_game(t_game *game);
+void	exit_error(char *message, t_game *game);
+
+void	load_textures(t_game *game);
+void	load_images(t_game *game);
+void	render(t_game *game, int i, int j, mlx_image_t *img);
+void	render_floor(t_game *game);
+void	render_w_e_c(t_game *game);
+void	render_player(t_game *game);
+void	render_all(t_game *game);
+
+
+
+t_game	*init_game(void);
+int	parse_map(char *map_file, t_game *game);
+void	move_player(t_game *game, int dx, int dy);
+void	handle_keypress(mlx_key_data_t keydata, void *param);
+
+#endif

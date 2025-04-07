@@ -6,7 +6,7 @@
 /*   By: makamins <makamins@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/01 14:57:19 by makamins          #+#    #+#             */
-/*   Updated: 2025/04/04 14:39:06 by makamins         ###   ########.fr       */
+/*   Updated: 2025/04/07 15:43:17 by makamins         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,15 +26,17 @@ void	free_matrix(char **matrix)
 }
 void	free_textures(t_game *game)
 {
-	if (game->textures->wall)
-		mlx_delete_texture(game->textures->wall);
-	if (game->textures->player_img)
-		mlx_delete_texture(game->textures->player_img);
-	if (game->textures->exit)
-		mlx_delete_texture(game->textures->exit);
-	if (game->textures->collectible)
-		mlx_delete_texture(game->textures->collectible);
-	free(game->textures);
+	if (game->tex->wall_tex)
+		mlx_delete_texture(game->tex->wall_tex);
+	if (game->tex->player_tex)
+		mlx_delete_texture(game->tex->player_tex);
+	if (game->tex->exit_tex)
+		mlx_delete_texture(game->tex->exit_tex);
+	if (game->tex->coll_tex)
+		mlx_delete_texture(game->tex->coll_tex);
+	if (game->tex->floor_tex)
+		mlx_delete_texture(game->tex->floor_tex);
+	free(game->tex);
 }
 
 void	free_game(t_game *game)
@@ -43,7 +45,7 @@ void	free_game(t_game *game)
 		mlx_terminate(game->mlx);
 	if (game->map)
 		free_matrix(game->map);
-	if (game->textures)
+	if (game->tex)
 		free_textures(game);
 	free(game);
 }

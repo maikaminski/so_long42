@@ -1,59 +1,94 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   render_utils.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: makamins <makamins@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/04/07 16:20:58 by makamins          #+#    #+#             */
+/*   Updated: 2025/04/07 18:19:54 by makamins         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
-void	render_floor(t_game *game, int x, int y)
+void	render(t_game *game, int i, int j, mlx_image_t *img)
 {
-	mlx_image_t	*floor_img;
-
-	floor_img = mlx_new_image(game->mlx, TILE_SIZE, TILE_SIZE);
-	if (!floor_img)
-		exit_error("Failed to create floor image", game);
-	mlx_image_to_window(game->mlx, floor_img, x * TILE_SIZE, y *TILE_SIZE);
+	int	x;
+	int	y;
+	
+	if (!game->mlx || !img)
+	{
+		ft_printf("Image not found\n");
+		return ;
+	}
+	x = j * TILE_SIZE;
+	y = i * TILE_SIZE;
+	mlx_image_to_window(game->mlx, img, x, y);
 }
 
-void	render_all_floors(t_game *game)
+void	render_floor(t_game *game)
 {
-	int y;
-	int x;
+	int	i;
+	int	j;
 
-	y = 0;
-	while (y < game->map_height)
+	i = 0;
+	while (i < game->map_height)
 	{
-		x = 0;
-		while (x < game->map_width)
+		j = 0;
+		while (j < game->map_width)
 		{
-			if (game->map[y][x] != '1')
-				render_floor(game, x, y);
-			x++;
+			render(game, i, j, game->tex->floor);
+			j++;
 		}
-		y++;
+		i++;
 	}
 }
 
-void	render_wall(t_game *game, int x, int y)
+void	render_w_e_c(t_game *game)
 {
-	mlx_image_t	*wall_img;
+	int i;
+	int j;
 
-	wall_img = mlx_new_image(game->mlx, TILE_SIZE, TILE_SIZE);
-	if (!wall_img)
-		exit_error("Failed to create wall image", game);
-	mlx_image_to_window(game->mlx, wall_img, x * TILE_SIZE, y * TILE_SIZE);
+	i = 0;
+	while (game->map[i])
+	{
+		j = 0;
+		while (game->map[i][j])
+		{
+			if (game->map[i][j] == '1')
+				render(game, i, j, game->tex->wall);
+			else if (game->map[i][j] == 'E')
+				render(game, i, j, game->tex->exit);
+			else if (game->map[i][j] == 'C')
+				render(game, i, j, game->tex->coll);
+			j++;
+		}
+		i++;
+	}
 }
 
-void	render_all_walls(t_game *game)
+void	render_player(t_game *game)
 {
-	int y;
-	int x;
-
-	y = 0;
-	while (y < game->map_height)
+	mlx_t	*mlx;
+	int		x;
+	int		y;
+	
+	mlx = game->mlx;
+	if (!mlx || !game->tex->player_img)
 	{
-		x = 0;
-		while (x < game->map_width)
-		{
-			if (game->map[y][x] == '1')
-				render_wall(game, x, y);
-			x++;
-		}
-		y++;
+		ft_printf("Image player not found\n");
+		return ;
 	}
+	x = game->player.x * TILE_SIZE;
+	y = game->player.y * TILE_SIZE;
+	mlx_image_to_window(mlx, game->tex->player_img, x, y);
+	game->current = game->tex->player_img;
+}
+
+void	render_all(t_game *game)
+{
+	render_floor(game);
+	render_w_e_c(game);
+	render_player(game);
 }

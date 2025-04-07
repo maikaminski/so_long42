@@ -6,14 +6,14 @@
 #    By: makamins <makamins@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/03/24 17:38:11 by makamins          #+#    #+#              #
-#    Updated: 2025/04/04 16:41:03 by makamins         ###   ########.fr        #
+#    Updated: 2025/04/07 17:48:35 by makamins         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = so_long
 FLAGS = -Wall -Wextra -Werror -g
-SRC = so_long.c game_utils.c errors.c init_game.c map_validate.c \
-		player_moves.c 
+SRC = so_long.c load_images.c errors.c init_game.c map_validate.c \
+		player_moves.c render_utils.c 
 CC = cc
 GNL = gnl/gnl.a
 LIBFT = libft/libft.a

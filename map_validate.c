@@ -6,7 +6,7 @@
 /*   By: makamins <makamins@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 14:11:14 by makamins          #+#    #+#             */
-/*   Updated: 2025/04/04 14:24:32 by makamins         ###   ########.fr       */
+/*   Updated: 2025/04/07 16:06:05 by makamins         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,7 @@ int	parse_map(char *map_file, t_game *game)
 		free(line);
 	}
 	close(fd);
+	game->map[i] = NULL;
 	game->map_height = i;
 	game->map_width = ft_strlen(game->map[0]);
 	validate_map(game);
