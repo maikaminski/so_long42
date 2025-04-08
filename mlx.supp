@@ -1,0 +1,87 @@
+{
+   MLX42 Init Leak
+   Memcheck:Leak
+   ...
+   fun:mlx_init
+}
+
+{
+   MLX42 New Image Leak
+   Memcheck:Leak
+   ...
+   fun:mlx_new_image
+}
+
+{
+   MLX42 New Window Leak
+   Memcheck:Leak
+   ...
+   fun:mlx_new_window
+}
+
+{
+   MLX42 Texture Leak
+   Memcheck:Leak
+   ...
+   fun:mlx_load_png
+}
+
+{
+   GLFW Init Leak
+   Memcheck:Leak
+   ...
+   fun:glfwInit
+}
+
+{
+   GLFW CreateWindow Leak
+   Memcheck:Leak
+   ...
+   fun:glfwCreateWindow
+}
+
+{
+   GLFW Thread Leak
+   Memcheck:Leak
+   ...
+   obj:*libglfw.so*
+}
+
+{
+   X11 Font Leak
+   Memcheck:Leak
+   ...
+   obj:*libfontconfig.so*
+}
+
+{
+   X11 Leak
+   Memcheck:Leak
+   ...
+   obj:*libX11.so*
+}
+
+{
+   OpenGL Context Leak
+   Memcheck:Leak
+   ...
+   obj:*libGL.so*
+}
+
+{
+   <MLX_CODAM_DL_FIND_OBJECT>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:_dl_find_object_update
+   ...
+}
+
+{
+   <MLX_CODAM_DLOPEN_IMPL>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:dlopen@@GLIBC_2.34
+   ...
+}

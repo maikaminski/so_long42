@@ -6,7 +6,7 @@
 /*   By: makamins <makamins@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/24 15:13:03 by makamins          #+#    #+#             */
-/*   Updated: 2025/04/07 18:20:00 by makamins         ###   ########.fr       */
+/*   Updated: 2025/04/08 18:29:31 by makamins         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,17 +35,17 @@ typedef struct s_player
 
 typedef struct s_images
 {
-    mlx_image_t     *player_img;
-    mlx_image_t     *coll;
-    mlx_image_t     *floor;
-    mlx_image_t     *wall;
-    mlx_image_t     *exit;
-    mlx_texture_t   *wall_tex;
-    mlx_texture_t   *player_tex;
-    mlx_texture_t   *exit_tex;
-    mlx_texture_t   *coll_tex;
-	mlx_texture_t	*floor_tex;
-} t_images;
+	mlx_image_t		*p_img;
+	mlx_image_t		*coll;
+	mlx_image_t		*floor;
+	mlx_image_t		*wall;
+	mlx_image_t		*exit;
+	mlx_texture_t	*wall_t;
+	mlx_texture_t	*player_t;
+	mlx_texture_t	*exit_t;
+	mlx_texture_t	*coll_t;
+	mlx_texture_t	*floor_t;
+}	t_images;
 
 typedef struct s_game
 {
@@ -60,7 +60,6 @@ typedef struct s_game
 	mlx_image_t	*current;
 	t_images	*tex;
 	t_player	player;
-	t_images	images;
 	int			is_mlx_init;
 }	t_game;
 
@@ -68,19 +67,20 @@ void	free_matrix(char **matrix);
 void	free_textures(t_game *game);
 void	free_game(t_game *game);
 void	exit_error(char *message, t_game *game);
+void	close_game(void *param);
 
 void	load_textures(t_game *game);
 void	load_images(t_game *game);
 void	render(t_game *game, int i, int j, mlx_image_t *img);
 void	render_floor(t_game *game);
+void	render_exit_tile(t_game *game);
 void	render_w_e_c(t_game *game);
 void	render_player(t_game *game);
 void	render_all(t_game *game);
 
-
-
-t_game	*init_game(void);
-int	parse_map(char *map_file, t_game *game);
+t_game	*init_game(char *map_file);
+int		parse_map(char *map_file, t_game *game);
+void	validate_path(t_game *game);
 void	move_player(t_game *game, int dx, int dy);
 void	handle_keypress(mlx_key_data_t keydata, void *param);
 
